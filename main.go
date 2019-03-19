@@ -13,8 +13,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"text/template"
+
+	"golang.org/x/oauth2"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	jose "gopkg.in/square/go-jose.v2"
 )
 
 const (
@@ -28,28 +32,98 @@ const (
 
 func main() {
 	generateSigningKey()
-	/*
-		if err := requestCertification(softwareStatement()); err != nil {
+
+	ss := getSoftwareStatement()
+
+	if _, err := os.Stat("certification.txt"); err != nil {
+
+		if err := requestCertification(ss); err != nil {
 			log.Fatalln(err)
 		}
+
 		if err := waitForCertification(); err != nil && err != http.ErrServerClosed {
 			log.Fatalln(err)
 		}
-	*/
+	}
+
 	cert := certification()
-	statementToken, err := getSoftwareStatement().token()
+	statementToken, err := ss.token()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	if err := requestCredentials(registrationRequest{
+	conf, err := requestCredentials(registrationRequest{
 		statementToken,
 		[]string{cert},
-	}); err != nil {
+	})
+
+	if err != nil {
 		log.Fatalln(err)
 	}
 
+	log.Println(conf)
+
+	conf.Endpoint = oauth2.Endpoint{
+		AuthURL:  "http://localhost:8000/v1/o/authorize/",
+		TokenURL: "http://localhost:8000/v1/o/token/",
+	}
+
+	s := &server{
+		conf: conf,
+	}
+	http.ListenAndServe(":8080", s)
+
 	log.Println("yay! it all worked!")
+}
+
+type server struct {
+	conf *oauth2.Config
+	tok  *oauth2.Token
+}
+
+func (s *server) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	code := r.FormValue("code")
+	if code != "" {
+		tok, err := s.conf.Exchange(context.Background(), code)
+		if err != nil {
+			log.Println(err)
+			http.Error(rw, err.Error(), 500)
+			return
+		}
+		s.tok = tok
+	}
+	if s.tok != nil {
+		client := s.conf.Client(context.Background(), s.tok)
+		resp, _ := client.Get("http://localhost:8000/v1/fhir/Patient/")
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Println(err)
+			http.NotFound(rw, r)
+		}
+		rw.Write(b)
+		return
+	}
+	// Redirect user to consent page to ask for permission
+	// for the scopes specified above.
+	url := s.conf.AuthCodeURL("state", oauth2.AccessTypeOffline)
+	fmt.Printf("Visit the URL for the auth dialog: %v\n", url)
+	t, err := template.ParseFiles("index.html")
+	if err != nil {
+		log.Println(err)
+		http.NotFound(rw, r)
+		return
+	}
+	if err := t.Execute(rw,
+		struct {
+			URL string
+		}{
+			URL: url,
+		}); err != nil {
+		log.Println(err)
+		http.NotFound(rw, r)
+		return
+	}
+	return
 }
 
 type softwareStatement []byte
@@ -75,6 +149,11 @@ func (ss softwareStatement) token() (string, error) {
 		log.Println(err)
 		return "", err
 	}
+	jwk := jose.JSONWebKey{
+		Key: key,
+	}
+
+	token.Header["jwk"] = jwk
 
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(key)
@@ -123,7 +202,20 @@ func certification() string {
 }
 
 func requestCertification(ss []byte) error {
-	resp, err := http.Post(certificationURL, "application/json", bytes.NewBuffer(ss))
+	statement := &map[string]interface{}{}
+	if err := json.Unmarshal(ss, statement); err != nil {
+		return err
+	}
+
+	b, err := json.Marshal(&map[string]interface{}{
+		"software_statement": statement,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(certificationURL, "application/json", bytes.NewBuffer(b))
 	if err != nil {
 		return err
 	}
@@ -138,24 +230,48 @@ type registrationRequest struct {
 	Certifications    []string `json:"certifications"`
 }
 
-func requestCredentials(values registrationRequest) error {
+type oauth2Config struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	Endpoint     oauth2.Endpoint
+	RedirectURL  string
+	Scopes       []string
+}
+
+func requestCredentials(values registrationRequest) (*oauth2.Config, error) {
 	jsonValue, err := json.Marshal(values)
 	if err != nil {
 		log.Println(err)
-		return err
+		return nil, err
 	}
 	resp, err := http.Post(registrationURL, "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
 		log.Println(err)
-		return err
+		return nil, err
 	}
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("Failed to request certification: %s", resp.Status)
+		return nil, fmt.Errorf("Failed to request certification: %s", resp.Status)
 	}
-	return nil
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	log.Println(string(b))
+
+	c := &oauth2Config{}
+	if err := json.Unmarshal(b, c); err != nil {
+		return nil, err
+	}
+	return (*oauth2.Config)(c), nil
 }
 
 func generateSigningKey() {
+	if _, err := os.Stat("private.pem"); err == nil {
+		return
+	}
+
 	reader := rand.Reader
 	bitSize := 2048
 
