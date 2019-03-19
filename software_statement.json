@@ -1,0 +1,8 @@
+{
+	"software_statement": {
+		"name": "DCRTestApp",
+		"redirect_uris": "http://localhost:8080",
+		"agree": true,
+		"certification_callback": "http://172.17.0.1:8080"
+	}
+}
