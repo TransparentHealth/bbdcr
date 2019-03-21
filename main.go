@@ -30,6 +30,10 @@ const (
 	certificationStorageFile = "certification.txt"
 )
 
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 func main() {
 	generateSigningKey()
 
@@ -61,6 +65,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	log.Println("Here is the configuration from BlueButton!!!\n\n\n\n\n\n")
 	log.Println(conf)
 
 	conf.Endpoint = oauth2.Endpoint{
@@ -71,6 +76,7 @@ func main() {
 	s := &server{
 		conf: conf,
 	}
+	log.Println("Now we're ready to help some bene's, starting up the server....!!!\n\n\n\n\n\n")
 	http.ListenAndServe(":8080", s)
 
 	log.Println("yay! it all worked!")
@@ -149,25 +155,25 @@ func (ss softwareStatement) token() (string, error) {
 		log.Println(err)
 		return "", err
 	}
+
 	jwk := jose.JSONWebKey{
 		Key: key,
 	}
 
-	token.Header["jwk"] = jwk
+	token.Header["jwk"] = jwk.Public()
 
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(key)
 
-	log.Println(tokenString, err)
+	log.Println("Here's the software statement signed by me!\n\n\n\n\n", tokenString, "\n\n\n")
 	return tokenString, err
 }
 
 func handleCertification(s *http.Server) http.Handler {
-	log.Println("registering handler")
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		log.Println("got certification")
+		log.Println("Hey we're certified!")
 		certification := r.FormValue(certificationField)
-		log.Println(certification)
+		log.Println(certification, "\n\n\n\n")
 		err := ioutil.WriteFile(certificationStorageFile, []byte(certification), os.ModePerm)
 		if err != nil {
 			log.Fatal(err)
