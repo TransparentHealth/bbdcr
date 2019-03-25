@@ -6,6 +6,9 @@
 	"user_id": 1,
 	"authorization_grant_type": "authorization-code",
 	"client_type": "confidential",
+	"tos": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur porta semper tincidunt. Suspendisse a ullamcorper nibh. Pellentesque rhoncus scelerisque tortor et sollicitudin. Praesent auctor mauris risus, eget hendrerit libero posuere in. Praesent ornare risus nulla, ut sollicitudin nibh sagittis eget. Aenean vulputate turpis at eleifend ornare. Interdum et malesuada fames ac ante ipsum primis in faucibus. In tincidunt in ante eget feugiat.",
+	"privacy_policy": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vel est eget justo vehicula laoreet ac sed ante. Aliquam eu sollicitudin turpis. Ut quis aliquet nibh. Maecenas in lobortis nulla, eu suscipit quam. Maecenas finibus orci et est blandit, ut pellentesque ante malesuada. Duis aliquet varius dignissim. Duis bibendum consectetur tortor vitae mollis. Nullam posuere sit amet augue eget ultrices. Suspendisse at lorem orci. Vivamus eu nibh congue, facilisis sapien non, aliquam ligula.",
+
 	"jwk": {
 		"kty": "RSA",
 		"n": "0n3kHh072fbUi8fOKZ-w39VPIwDFB_M6nf4Ft1i3RwTiX9g1eSTo1GYVFC0RH4V2pNQKvdVxFpcRnxkbvZo6ObHmMIwQ8T7CVSIvLJIvz-ODM7VYjNLk9z4kbvdoRLgh2lMowc5CF-Fg57C8DVh3mUQ0D2Riu0_xmBY48x53o_3G7dwMuCv2ErTTPlTgo_FT4nMrK1Vn6WTSvan7wfgUOxkij1jTAJFhCPeN4kuWTWDIDGqm4f1XcjChIVLwwTz3YzeGgncIDGZa_n0tJXfZBrHBPdKofXqJZtLLGZ2bmTS28xlr7CGsDPNMIPTw8HDsxVtb6E2uVpSX8lyUhcH_ow",
