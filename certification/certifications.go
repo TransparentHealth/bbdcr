@@ -1,4 +1,4 @@
-package main
+package certification
 
 import (
 	"bytes"
@@ -9,6 +9,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+)
+
+const (
+	// TODO: Make this discoverable
+	certificationURL         = "http://localhost:8000/v1/certification/requests/"
+	certificationField       = "certification"
+	certificationStorageFile = "certification.txt"
 )
 
 func alreadyCertified() bool {
@@ -30,7 +37,7 @@ func handleCertification(s *http.Server) http.Handler {
 	})
 }
 
-func waitForCertification() {
+func Wait() {
 	if alreadyCertified() {
 		return
 	}
@@ -43,7 +50,7 @@ func waitForCertification() {
 	}
 }
 
-func loadCertification() string {
+func Load() string {
 	content, err := ioutil.ReadFile(certificationStorageFile)
 	if err != nil {
 		log.Fatal(err)
@@ -51,7 +58,7 @@ func loadCertification() string {
 	return string(content)
 }
 
-func requestCertification(ss []byte) {
+func SendRequest(ss []byte) {
 	statement := &map[string]interface{}{}
 	if err := json.Unmarshal(ss, statement); err != nil {
 		log.Fatalln(err)

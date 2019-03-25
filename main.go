@@ -2,7 +2,11 @@ package main
 
 import (
 	"log"
-	"net/http"
+
+	"github.com/whytheplatypus/bbdcr/app"
+	"github.com/whytheplatypus/bbdcr/certification"
+	"github.com/whytheplatypus/bbdcr/crypto"
+	"github.com/whytheplatypus/bbdcr/registration"
 )
 
 const (
@@ -20,33 +24,28 @@ var (
 
 func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	GenerateSigningKey()
-	softwareStatement = getSoftwareStatement()
+	crypto.GenerateSigningKey()
+	softwareStatement = registration.SoftwareStatement()
 }
 
 func main() {
 
-	requestCertification(softwareStatement)
+	certification.SendRequest(softwareStatement)
 
-	waitForCertification()
+	certification.Wait()
 
-	cert := loadCertification()
+	cert := certification.Load()
 
-	req := registrationRequest{
-		signSoftwareStatement(softwareStatement),
+	req := registration.Request{
+		registration.Sign(softwareStatement),
 		[]string{cert},
 	}
 
-	conf := requestCredentials(req)
+	conf := registration.RequestCredentials(req)
 
 	log.Println("Here is the configuration from BlueButton!!!\n\n\n\n\n\n", conf)
 
-	s := &server{}
-	s.setConf(conf)
-
-	log.Println("Now we're ready to help some bene's, starting up the server....!!!\n\n\n\n\n\n")
-
-	http.ListenAndServe(":8080", s)
+	app.Start(conf)
 
 	log.Println("yay! it all worked!")
 }

@@ -1,4 +1,4 @@
-package main
+package registration
 
 import (
 	"bytes"
@@ -13,7 +13,13 @@ import (
 	jose "gopkg.in/square/go-jose.v2"
 )
 
-func signSoftwareStatement(ss []byte) string {
+const (
+	// TODO: Make this discoverable
+	registrationURL       = "http://localhost:8000/v1/o/register"
+	softwareStatementPath = "software_statement.json"
+)
+
+func Sign(ss []byte) string {
 	claims := &jwt.MapClaims{}
 	if err := json.Unmarshal(ss, claims); err != nil {
 		log.Fatalln(err)
@@ -48,7 +54,7 @@ func signSoftwareStatement(ss []byte) string {
 	return tokenString
 }
 
-func getSoftwareStatement() []byte {
+func SoftwareStatement() []byte {
 	content, err := ioutil.ReadFile(softwareStatementPath)
 	if err != nil {
 		log.Fatal(err)
@@ -56,7 +62,7 @@ func getSoftwareStatement() []byte {
 	return content
 }
 
-type registrationRequest struct {
+type Request struct {
 	SoftwareStatement string   `json:"software_statement"`
 	Certifications    []string `json:"certifications"`
 }
@@ -69,7 +75,7 @@ type oauth2Config struct {
 	Scopes       []string
 }
 
-func requestCredentials(values registrationRequest) *oauth2.Config {
+func RequestCredentials(values Request) *oauth2.Config {
 	jsonValue, err := json.Marshal(values)
 	if err != nil {
 		log.Fatalln(err)

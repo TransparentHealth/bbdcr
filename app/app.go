@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -10,6 +10,15 @@ import (
 
 	"golang.org/x/oauth2"
 )
+
+func Start(c *oauth2.Config) {
+	s := &server{}
+	s.setConf(c)
+
+	log.Println("Now we're ready to help some bene's, starting up the server....!!!\n\n\n\n\n\n")
+
+	http.ListenAndServe(":8080", s)
+}
 
 type server struct {
 	conf *oauth2.Config
