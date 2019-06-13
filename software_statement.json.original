@@ -2,7 +2,7 @@
 	"name": "DCRTestApp",
 	"redirect_uris": "http://localhost:8080",
 	"agree": true,
-	"certification_callback": "http://10.105.76.34:8080",
+	"certification_callback": "http://172.16.0.36:8080",
 	"user_id": 1,
 	"authorization_grant_type": "authorization-code",
 	"client_type": "confidential",

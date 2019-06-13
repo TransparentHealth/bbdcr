@@ -1,0 +1,8 @@
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+DOCKER_HOST=$(ifconfig en0 | grep 'inet ' | cut -d ' ' -f2)
+source_file=software_statement.json.source
+ss_file=software_statement.json
+cp $DIR/$source_file $DIR/$ss_file
+sed -i "s/__REPLACE_WITH_HOST_IP__/$DOCKER_HOST/g" $DIR/$ss_file
+cat $DIR/$ss_file | grep certification_callback
+
